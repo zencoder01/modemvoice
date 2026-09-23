@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  modemvoice:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}
+      - ASSEMBLYAI_WEBHOOK_URL=${ASSEMBLYAI_WEBHOOK_URL}
+      - MODEM_PORT=${MODEM_PORT:-COM3}
+      - MODEM_BAUDRATE=${MODEM_BAUDRATE:-115200}
+      - MODEM_TIMEOUT=${MODEM_TIMEOUT:-5}
+    volumes:
+      # On Linux, you may need to pass through USB device
+      # - /dev/ttyUSB0:/dev/ttyUSB0
+      # On Windows, COM ports work through host networking
+    restart: unless-stopped
+    networks:
+      - modemvoice-network
+
+networks:
+  modemvoice-network:
+    driver: bridge

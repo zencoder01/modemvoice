@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModemVoice - Voice Controlled Modem</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📡 ModemVoice</h1>
+            <p class="subtitle">Voice-Controlled Huawei Modem Manager</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">Modem</span>
+                <span id="modem-status" class="status-value disconnected">Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Signal</span>
+                <span id="signal-strength" class="status-value">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Operator</span>
+                <span id="operator" class="status-value">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Network</span>
+                <span id="network-type" class="status-value">--</span>
+            </div>
+            <button id="refresh-btn" class="btn refresh-btn">🔄 Refresh</button>
+        </div>
+
+        <div class="main-grid">
+            <section class="card">
+                <h2>📊 Modem Status</h2>
+                <div id="status-details">
+                    <div class="detail-row"><span>Signal Strength:</span> <span id="detail-signal">--</span></div>
+                    <div class="detail-row"><span>Operator:</span> <span id="detail-operator">--</span></div>
+                    <div class="detail-row"><span>Network Type:</span> <span id="detail-network">--</span></div>
+                    <div class="detail-row"><span>SIM Status:</span> <span id="detail-sim">--</span></div>
+                    <div class="detail-row"><span>Port:</span> <span id="detail-port">--</span></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>💰 USSD Balance Check</h2>
+                <div class="input-group">
+                    <input type="text" id="ussd-code" placeholder="*100#" value="*100#">
+                    <button class="btn" onclick="sendUssd()">Check Balance</button>
+                </div>
+                <div class="output" id="ussd-output"></div>
+                <div class="quick-ussd">
+                    <button class="btn small" onclick="quickUssd('*100#')">*100#</button>
+                    <button class="btn small" onclick="quickUssd('*131#')">*131#</button>
+                    <button class="btn small" onclick="quickUssd('*123#')">*123#</button>
+                    <button class="btn small" onclick="quickUssd('*141*1#')">*141*1#</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>📨 SMS Manager</h2>
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('send')">Send SMS</button>
+                    <button class="tab-btn" onclick="showTab('inbox')">Inbox</button>
+                </div>
+                
+                <div id="tab-send" class="tab-content active">
+                    <div class="input-group">
+                        <input type="tel" id="sms-number" placeholder="Phone number (e.g. +1234567890)">
+                        <textarea id="sms-message" placeholder="Message" rows="3"></textarea>
+                        <button class="btn" onclick="sendSms()">Send SMS</button>
+                    </div>
+                    <div class="output" id="sms-output"></div>
+                </div>
+                
+                <div id="tab-inbox" class="tab-content">
+                    <button class="btn" onclick="loadSms()">🔄 Load Messages</button>
+                    <div id="sms-list"></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>📞 Call Control</h2>
+                <div class="input-group">
+                    <input type="tel" id="call-number" placeholder="Phone number to dial">
+                    <button class="btn" onclick="dialCall()">📞 Dial</button>
+                    <button class="btn danger" onclick="hangupCall()">📴 Hang Up</button>
+                </div>
+                <div class="output" id="call-output"></div>
+            </section>
+
+            <section class="card">
+                <h2>🎤 Voice Agent Status</h2>
+                <div class="voice-status">
+                    <div class="status-indicator" id="voice-indicator"></div>
+                    <span id="voice-status">Waiting for voice agent...</span>
+                </div>
+                <p class="hint">Configure your AssemblyAI Voice Agent to point to this server's webhook endpoint.</p>
+                <div class="webhook-info">
+                    <strong>Webhook URL:</strong> <code id="webhook-url">http://localhost:8000/webhook/assemblyai</code>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p>ModemVoice - AssemblyAI Voice Agent Hackathon 2026 | Built with AssemblyAI Voice Agent API + FastAPI + Huawei AT Commands</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
