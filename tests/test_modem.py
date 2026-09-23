@@ -92,11 +92,16 @@ class TestHuaweiModemBasic:
         """Test USSD sending logic."""
         with patch('backend.modem.serial.Serial') as mock_serial:
             mock_ser = MagicMock()
-            mock_serial.return_value = MagicMock(return_value=MagicMock())
+            mock_ser.is_open = True
+            mock_serial.return_value = mock_ser
             
             with patch('backend.modem.HuaweiModem.__init__', return_value=None):
                 modem = HuaweiModem.__new__(HuaweiModem)
+                modem.ser = mock_ser
                 modem.send_command = Mock(return_value='+CUSD: 0,"Your balance is 50.00 PKR",15\r\nOK')
+                
+                # We need to mock connect since it relies on init values
+                modem.connect = Mock(return_value=True)
                 
                 response = modem.send_ussd("*100#")
                 assert "50.00" in response
