@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import get_settings
-from backend.modem import modem
+from backend.modem import get_modem
 from backend.schemas import (
     AssemblyAiWebhookPayload,
     AssemblyAiWebhookResponse,
@@ -41,25 +41,27 @@ app.add_middleware(
 async def startup_event():
     logger.info("Starting ModemVoice API")
     # Initialize modem connection
-    if not modem.connect():
-        logger.warning(f"Could not connect to modem on port {modem.port}. Ensure it is connected and drivers are installed.")
+    m = get_modem()
+    if not m.connect():
+        logger.warning(f"Could not connect to modem on port {m.port}. Ensure it is connected and drivers are installed.")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down ModemVoice API")
-    modem.disconnect()
+    get_modem().disconnect()
 
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "modem_connected": modem.ser is not None and modem.ser.is_open}
+    m = get_modem()
+    return {"status": "ok", "modem_connected": m.ser is not None and m.ser.is_open}
 
 
 @app.get("/modem/status")
 def get_status():
     try:
-        status = modem.get_status()
+        status = get_modem().get_status()
         return status
     except Exception as e:
         logger.error(f"Error getting modem status: {e}")
@@ -69,7 +71,7 @@ def get_status():
 @app.post("/ussd/send", response_model=UssdResponse)
 def send_ussd(req: UssdRequest):
     try:
-        response = modem.send_ussd(req.code)
+        response = get_modem().send_ussd(req.code)
         return UssdResponse(
             response=response,
             status="success" if "ERROR" not in response else "error"
@@ -82,7 +84,7 @@ def send_ussd(req: UssdRequest):
 @app.post("/sms/send")
 def send_sms(req: SmsRequest):
     try:
-        success = modem.send_sms(req.number, req.message)
+        success = get_modem().send_sms(req.number, req.message)
         if success:
             return {"status": "success", "message": "SMS sent successfully"}
         else:
@@ -95,7 +97,7 @@ def send_sms(req: SmsRequest):
 @app.get("/sms/list")
 def list_sms():
     try:
-        messages = modem.list_sms()
+        messages = get_modem().list_sms()
         return {"messages": messages}
     except Exception as e:
         logger.error(f"Error listing SMS: {e}")
@@ -105,7 +107,7 @@ def list_sms():
 @app.post("/call/dial")
 def dial(req: CallRequest):
     try:
-        success = modem.dial(req.number)
+        success = get_modem().dial(req.number)
         if success:
             return {"status": "success", "message": f"Dialing {req.number}..."}
         else:
@@ -118,7 +120,7 @@ def dial(req: CallRequest):
 @app.post("/call/hangup")
 def hangup():
     try:
-        success = modem.hangup()
+        success = get_modem().hangup()
         if success:
             return {"status": "success", "message": "Call disconnected"}
         else:
@@ -131,7 +133,7 @@ def hangup():
 @app.post("/call/answer")
 def answer():
     try:
-        success = modem.answer()
+        success = get_modem().answer()
         if success:
             return {"status": "success", "message": "Call answered"}
         else:
@@ -170,14 +172,15 @@ async def assemblyai_webhook(request: Request):
                     content = "Action completed."
                     
                     # Route to appropriate modem function
+                    m = get_modem()
                     if func_name == "check_modem_status":
-                        status = modem.get_status()
+                        status = m.get_status()
                         content = f"Signal strength is {status.signal_strength}. Network: {status.operator} ({status.network_type}). SIM status: {status.sim_status}."
                         
                     elif func_name == "send_ussd":
                         code = args.get("code")
                         if code:
-                            resp = modem.send_ussd(code)
+                            resp = m.send_ussd(code)
                             content = f"The USSD response is: {resp}"
                         else:
                             content = "Missing USSD code."
@@ -186,13 +189,13 @@ async def assemblyai_webhook(request: Request):
                         number = args.get("number")
                         message = args.get("message")
                         if number and message:
-                            success = modem.send_sms(number, message)
+                            success = m.send_sms(number, message)
                             content = "SMS sent successfully." if success else "Failed to send SMS."
                         else:
                             content = "Missing phone number or message."
                             
                     elif func_name == "read_latest_sms":
-                        messages = modem.list_sms()
+                        messages = m.list_sms()
                         if messages:
                             latest = messages[-1]
                             content = f"Latest message from {latest.sender}: {latest.content}"
@@ -202,13 +205,13 @@ async def assemblyai_webhook(request: Request):
                     elif func_name == "dial_number":
                         number = args.get("number")
                         if number:
-                            success = modem.dial(number)
+                            success = m.dial(number)
                             content = f"Dialing {number}." if success else "Failed to make call."
                         else:
                             content = "Missing phone number to dial."
                             
                     elif func_name == "hang_up":
-                        success = modem.hangup()
+                        success = m.hangup()
                         content = "Call disconnected." if success else "Failed to hang up."
                     
                     else:

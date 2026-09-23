@@ -280,5 +280,12 @@ class HuaweiModem:
         res = self.send_command("ATA")
         return "ERROR" not in res
 
-# Singleton instance
-modem = HuaweiModem()
+# Singleton instance - lazy loaded
+modem = None
+
+def get_modem() -> HuaweiModem:
+    """Get or create the singleton modem instance."""
+    global modem
+    if modem is None:
+        modem = HuaweiModem()
+    return modem
