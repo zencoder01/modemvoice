@@ -93,6 +93,7 @@ class TestHuaweiModemBasic:
         with patch('backend.modem.serial.Serial') as mock_serial:
             mock_ser = MagicMock()
             mock_ser.is_open = True
+            mock_ser.in_waiting = 0  # Must be int, not MagicMock
             mock_serial.return_value = mock_ser
             
             with patch('backend.modem.HuaweiModem.__init__', return_value=None):
