@@ -21,7 +21,7 @@ from backend.modem import HuaweiModem, modem
 from backend.schemas import ModemStatus, SmsMessage
 
 
-class TestHuaweiModem:
+class TestHuaweiModemBasic:
     @pytest.fixture
     def fresh_modem(self):
         """Create a fresh modem instance with mocked serial."""
@@ -36,8 +36,6 @@ class TestHuaweiModem:
             modem_instance.ser = mock_ser
             yield modem_instance
 
-
-class TestHuaweiModemBasic:
     def test_send_command_ok(self, fresh_modem):
         fresh_modem.ser.readline.return_value = b"OK\r\n"
         result = fresh_modem.send_command("AT")
