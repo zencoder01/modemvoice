@@ -1,40 +1,39 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-import sys
-
-
-# We need to mock serial BEFORE importing the modem module
-@pytest.fixture(autouse=True)
-def mock_serial():
-    """Mock the serial module before any imports."""
-    with patch('backend.modem.serial.Serial') as mock_serial_class:
-        mock_ser = MagicMock()
-        mock_serial_class.return_value = mock_ser
-        mock_ser.is_open = True
-        mock_ser.in_waiting = 0
-        mock_ser.readline.return_value = b"OK\r\n"
-        yield mock_ser
-
-
-# Import AFTER the mock is set up
-from backend.modem import HuaweiModem, modem
 from backend.schemas import ModemStatus, SmsMessage
+
+
+# Mock serial at module level BEFORE any imports
+mock_serial_class = MagicMock()
+mock_ser = MagicMock()
+mock_serial_class.return_value = mock_ser
+mock_ser.is_open = True
+mock_ser.in_waiting = 0
+mock_ser.readline.return_value = b"OK\r\n"
+mock_ser.read.return_value = b""
+
+with patch('backend.modem.serial.Serial', mock_serial_class):
+    from backend.modem import HuaweiModem, modem, get_modem
+    from backend.schemas import ModemStatus, SmsMessage
 
 
 class TestHuaweiModemBasic:
     @pytest.fixture
     def fresh_modem(self):
         """Create a fresh modem instance with mocked serial."""
-        with patch('backend.modem.serial.Serial') as mock_serial_class:
-            mock_ser = MagicMock()
-            mock_serial_class.return_value = mock_ser
-            mock_ser.is_open = True
-            mock_ser.in_waiting = 0
+        # Reset the singleton
+        import backend.modem
+        backend.modem.modem = None
+        
+        with patch('backend.modem.serial.Serial', mock_serial_class):
+            fresh = HuaweiModem(port="COM3", baudrate=115200, timeout=5)
+            fresh.ser = mock_ser
             mock_ser.readline.return_value = b"OK\r\n"
-            
-            modem_instance = HuaweiModem(port="COM3", baudrate=115200, timeout=5)
-            modem_instance.ser = mock_ser
-            yield modem_instance
+            mock_ser.read.return_value = b""
+            mock_ser.write = Mock()
+            mock_ser.reset_input_buffer = Mock()
+            mock_ser.close = Mock()
+            yield fresh
 
     def test_send_command_ok(self, fresh_modem):
         fresh_modem.ser.readline.return_value = b"OK\r\n"
