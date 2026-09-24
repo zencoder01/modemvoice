@@ -103,6 +103,7 @@ class TestHuaweiModemBasic:
             
             with patch('backend.modem.HuaweiModem.__init__', return_value=None):
                 modem = HuaweiModem.__new__(HuaweiModem)
+                modem.timeout = 5  # Add this since we're bypassing __init__
                 modem.ser = mock_ser
                 
                 # We need to mock connect since it relies on init values
