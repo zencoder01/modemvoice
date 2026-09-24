@@ -95,6 +95,7 @@ class TestHuaweiModemBasic:
             mock_ser.is_open = True
             mock_ser.in_waiting = 0
             mock_ser.readline.side_effect = [
+                b"OK\r\n",  # Response to AT+CUSD=1
                 b'+CUSD: 0,"Your balance is 50.00 PKR",15\r\n',
                 b"OK\r\n",
                 b"",  # end of iteration
@@ -108,6 +109,9 @@ class TestHuaweiModemBasic:
                 
                 # We need to mock connect since it relies on init values
                 modem.connect = Mock(return_value=True)
+                
+                # We need to mock send_command to handle AT+CUSD=1
+                modem.send_command = Mock(return_value="OK")
                 
                 response = modem.send_ussd("*100#")
                 assert "50.00" in response
